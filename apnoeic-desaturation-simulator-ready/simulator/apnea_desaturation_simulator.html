@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>In-silico apnoeic desaturation simulator</title>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --ink: #15171a;
+      --muted: #667085;
+      --line: #d0d5dd;
+      --accent: #2563eb;
+      --warn: #b42318;
+      --ok: #027a48;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+    header {
+      padding: 18px 22px 10px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+    }
+    header h1 {
+      margin: 0 0 4px;
+      font-size: 22px;
+      line-height: 1.2;
+    }
+    header p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .disclaimer {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-left: 4px solid var(--warn);
+      background: #fff4f2;
+      color: #4a1f19;
+      font-size: 13px;
+    }
+    main {
+      display: grid;
+      grid-template-columns: 360px minmax(640px, 1fr);
+      gap: 16px;
+      padding: 16px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+    }
+    .controls { padding: 14px; }
+    .controls h2, .plot h2, .output h2 {
+      font-size: 16px;
+      margin: 0 0 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 12px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 650;
+      color: #344054;
+      margin-bottom: 4px;
+    }
+    input, select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 8px 9px;
+      font-size: 14px;
+      background: #fff;
+      color: var(--ink);
+    }
+    input[type="checkbox"] { width: auto; }
+    .checkrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding-top: 4px;
+      font-size: 13px;
+      color: #344054;
+    }
+    .full { grid-column: 1 / -1; }
+    .smallnote {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 8px;
+      line-height: 1.35;
+    }
+    .btns {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    button {
+      appearance: none;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      border-radius: 9px;
+      padding: 9px 12px;
+      font-weight: 700;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button.secondary {
+      background: #fff;
+      color: var(--accent);
+    }
+    .plot { padding: 14px; }
+    canvas {
+      width: 100%;
+      height: 560px;
+      display: block;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: #fff;
+    }
+    .rightcol {
+      display: grid;
+      gap: 16px;
+    }
+    .output { padding: 14px; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    th, td {
+      border-bottom: 1px solid #eaecf0;
+      padding: 7px 8px;
+      text-align: left;
+    }
+    th { color: #344054; font-weight: 750; }
+    td.value { font-variant-numeric: tabular-nums; font-weight: 650; }
+    .ok { color: var(--ok); }
+    .warn { color: var(--warn); }
+    .section-title {
+      margin: 16px 0 8px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      color: var(--muted);
+      font-weight: 800;
+    }
+    @media (max-width: 1050px) {
+      main { grid-template-columns: 1fr; }
+      canvas { height: 460px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>In-silico apnoeic oxygen desaturation simulator</h1>
+    <p>Standalone browser version of the deterministic two-compartment model used for the paediatric apnoea paper.</p>
+    <div class="disclaimer">
+      Educational and research simulator only. It does not predict individual patient risk and must not be used to determine safe apnoea time or guide airway/oxygenation management.
+    </div>
+  </header>
+
+  <main>
+    <aside class="panel controls">
+      <h2>Controls</h2>
+      <div class="grid">
+        <div class="full">
+          <label for="mode">Graph mode</label>
+          <select id="mode">
+            <option value="single">Single scenario</option>
+            <option value="agebands">Paediatric age bands</option>
+            <option value="thrive">Limiting case: THRIVE vs closed airway</option>
+          </select>
+        </div>
+        <div class="full">
+          <label for="preset">Preset</label>
+          <select id="preset">
+            <option value="infant">0–6 mo, closed airway</option>
+            <option value="toddler">7–23 mo, closed airway</option>
+            <option value="preschool">2–5 yr, closed airway</option>
+            <option value="school">6–10 yr, closed airway</option>
+            <option value="adolescent">11–18 yr, closed airway</option>
+            <option value="adult">Adult, closed airway</option>
+            <option value="thrive">Adult, apnoeic oxygenation / THRIVE-like</option>
+          </select>
+        </div>
+
+        <div><label for="age">Age (yr)</label><input id="age" type="number" step="0.01" value="0.25"></div>
+        <div><label for="weight">Weight (kg)</label><input id="weight" type="number" step="0.1" value="6"></div>
+        <div><label for="hb">Hb (g/dL)</label><input id="hb" type="number" step="0.1" value="11"></div>
+        <div><label for="duration">Duration (min)</label><input id="duration" type="number" step="1" value="12"></div>
+
+        <div class="section-title full">Physiology</div>
+        <div><label for="fao2">Initial alveolar O₂ fraction</label><input id="fao2" type="number" step="0.01" min="0.21" max="0.99" value="0.90"></div>
+        <div><label for="shunt">Baseline shunt (%)</label><input id="shunt" type="number" step="0.5" min="0" max="50" value="5"></div>
+        <div><label for="frcFactor">FRC multiplier</label><input id="frcFactor" type="number" step="0.05" min="0.2" max="3" value="1"></div>
+        <div><label for="vo2Factor">VO₂ multiplier</label><input id="vo2Factor" type="number" step="0.05" min="0.2" max="3" value="1"></div>
+        <div><label for="coFactor">Cardiac output multiplier</label><input id="coFactor" type="number" step="0.05" min="0.2" max="3" value="1"></div>
+        <div><label for="dshunt">Dynamic shunt max increase (%)</label><input id="dshunt" type="number" step="1" min="0" max="40" value="0"></div>
+
+        <div class="section-title full">Airway and modules</div>
+        <div class="checkrow full"><input id="airway" type="checkbox"><span>Airway patent</span></div>
+        <div><label for="faw">Airway O₂ fraction</label><input id="faw" type="number" step="0.01" min="0" max="1" value="0"></div>
+        <div><label for="tau">Dynamic shunt tau (s)</label><input id="tau" type="number" step="5" min="10" max="600" value="90"></div>
+        <div class="checkrow full"><input id="cc" type="checkbox" checked><span>Apply age-dependent closing-capacity module</span></div>
+        <div class="checkrow full"><input id="compare" type="checkbox" checked><span>In single mode, overlay baseline without closing capacity</span></div>
+        <div class="checkrow full"><input id="patelObs" type="checkbox" checked><span>In age-band mode, show Patel observed T90 means ± SD</span></div>
+      </div>
+      <div class="btns">
+        <button id="run">Run simulation</button>
+        <button class="secondary" id="reset">Reset preset</button>
+        <button class="secondary" id="png">Export PNG</button>
+      </div>
+      <div class="smallnote">
+        Model: alveolar O₂ store + lumped blood–tissue store; Severinghaus Hb-O₂ curve; venous admixture; Fick uptake; apnoeic mass flow. Fixed-step RK4 integration in JavaScript.
+      </div>
+    </aside>
+
+    <section class="rightcol">
+      <div class="panel plot">
+        <h2 id="plotTitle">SpO₂–time curve</h2>
+        <canvas id="chart" width="1200" height="620" aria-label="SpO2 chart"></canvas>
+      </div>
+      <div class="panel output">
+        <h2>Computed values</h2>
+        <table id="outTable">
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+<script>
+'use strict';
+
+const P_BARO = 760.0;
+const P_H2O = 47.0;
+const HUFNER = 1.34;
+const ALPHA_O2 = 0.003;
+const R_APNEA_DEFAULT = 0.06;
+const F0_CC = 0.22;
+const AGE_SCALE_CC = 4.0;
+
+const PRESETS = {
+  infant:     {name:'0–6 mo', age:0.25, weight:6.0,  hb:null, airway:false, faw:0, duration:8},
+  toddler:    {name:'7–23 mo', age:1.25, weight:10.5, hb:null, airway:false, faw:0, duration:8},
+  preschool:  {name:'2–5 yr', age:3.5,  weight:15.0, hb:null, airway:false, faw:0, duration:8},
+  school:     {name:'6–10 yr', age:8.0,  weight:26.0, hb:null, airway:false, faw:0, duration:10},
+  adolescent: {name:'11–18 yr', age:14.5, weight:50.0, hb:null, airway:false, faw:0, duration:12},
+  adult:      {name:'adult', age:35.0, weight:70.0, hb:15.0, airway:false, faw:0, duration:12, frcOverride:2300, vo2Override:250, coOverride:50},
+  thrive:     {name:'adult THRIVE-like', age:45.0, weight:80.0, hb:14.0, airway:true, faw:1.0, duration:20, frcOverride:2400, vo2Override:250, coOverride:55, shunt:8}
+};
+
+const PATEL_OBS = {
+  '0–6 mo': {t90:96.5, sd:12.7},
+  '7–23 mo': {t90:118.5, sd:9.0},
+  '2–5 yr': {t90:160.4, sd:30.7},
+  '6–10 yr': {t90:214.9, sd:34.9},
+  '11–18 yr': {t90:382.4, sd:79.9}
+};
+
+const COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#17becf'];
+
+function $(id) { return document.getElementById(id); }
+function num(id) { return Number($(id).value); }
+function set(id, value) { $(id).value = value; }
+function clamp(x, lo, hi) { return Math.max(lo, Math.min(hi, x)); }
+
+function severinghausSao2(po2) {
+  po2 = Math.max(po2, 1e-6);
+  return 1.0 / ((23400.0 / (po2*po2*po2 + 150.0 * po2)) + 1.0);
+}
+function severinghausPo2(sao2) {
+  sao2 = clamp(sao2, 1e-6, 0.999999);
+  let lo = 1.0, hi = 700.0;
+  for (let i = 0; i < 60; i++) {
+    const mid = 0.5 * (lo + hi);
+    const f = severinghausSao2(mid);
+    if (f > sao2) hi = mid; else lo = mid;
+  }
+  return 0.5 * (lo + hi);
+}
+function o2Content(hb, sao2, po2) {
+  return HUFNER * hb * sao2 + ALPHA_O2 * po2;
+}
+function vo2Reference(age, weight) {
+  const K = 250.0 / Math.pow(70.0, 0.75);
+  return K * Math.pow(weight, 0.75);
+}
+function frcReference(age, weight) {
+  const kFrc = 30.0 - 13.0 * Math.exp(-age / 2.5);
+  return kFrc * weight;
+}
+function coReference(age, weight) {
+  const K = 5000.0 / Math.pow(70.0, 0.75);
+  return (K * Math.pow(weight, 0.75)) / 100.0;
+}
+function hbReference(age) {
+  const xs = [0.0, 0.05, 0.25, 0.5, 1.0, 5.0, 12.0, 18.0];
+  const ys = [17.0, 15.0, 11.0, 11.5, 12.0, 12.5, 13.5, 14.5];
+  if (age <= xs[0]) return ys[0];
+  if (age >= xs[xs.length-1]) return ys[ys.length-1];
+  for (let i=1; i<xs.length; i++) {
+    if (age <= xs[i]) {
+      const u = (age - xs[i-1]) / (xs[i] - xs[i-1]);
+      return ys[i-1] + u * (ys[i] - ys[i-1]);
+    }
+  }
+  return ys[ys.length-1];
+}
+function fTrappedCc(age) {
+  return F0_CC * Math.exp(-age / AGE_SCALE_CC);
+}
+function shuntAt(tSec, p) {
+  const factor = p.airway ? 0.3 : 1.0;
+  return p.shunt + p.dshuntMax * (1.0 - Math.exp(-tSec / p.tauAtel)) * factor;
+}
+
+function deriv(tSec, state, p) {
+  let A_L = Math.max(state.A_L, 1e-6);
+  let Cv = Math.max(state.Cv, 1e-6);
+  const frcEff = p.frc * (1.0 - p.fTrapped);
+  const fao2 = clamp(A_L / frcEff, 0.0, 1.0);
+  const pao2 = fao2 * (P_BARO - P_H2O);
+  const scc = severinghausSao2(pao2);
+  const ccc = o2Content(p.hb, scc, pao2);
+  const sv = clamp(Cv / (HUFNER * p.hb), 1e-6, 1.0);
+  const pv = severinghausPo2(sv);
+  const cv = o2Content(p.hb, sv, pv);
+  const ca = (1.0 - shuntAt(tSec, p)) * ccc + shuntAt(tSec, p) * cv;
+  const jUp = Math.max(p.co * (ca - cv), 0.0);
+  const vco2Alv = p.rApnea * p.vo2;
+  const jNet = Math.max(jUp - vco2Alv, 0.0);
+  const o2InAw = p.airway ? jNet * p.fAwO2 : 0.0;
+  return { dA_L: o2InAw - jUp, dCv: (jUp - p.vo2) / p.volBlood };
+}
+
+function sao2FromState(tSec, state, p) {
+  const frcEff = p.frc * (1.0 - p.fTrapped);
+  const A_L = Math.max(state.A_L, 1e-6);
+  const Cv = Math.max(state.Cv, 1e-6);
+  const fao2 = clamp(A_L / frcEff, 0.0, 1.0);
+  const pao2 = fao2 * (P_BARO - P_H2O);
+  const scc = severinghausSao2(pao2);
+  const ccc = o2Content(p.hb, scc, pao2);
+  const sv = clamp(Cv / (HUFNER * p.hb), 1e-6, 1.0);
+  const pv = severinghausPo2(sv);
+  const cv = o2Content(p.hb, sv, pv);
+  const ca = (1.0 - shuntAt(tSec, p)) * ccc + shuntAt(tSec, p) * cv;
+  const sa = clamp((ca - ALPHA_O2 * pao2) / (HUFNER * p.hb), 1e-6, 1.0);
+  return {spo2: 100.0 * sa, pao2: pao2, fao2: fao2};
+}
+
+function simulate(p, tMaxSec, dtSec=1.0) {
+  const frcEff = p.frc * (1.0 - p.fTrapped);
+  const A0 = p.fao2Init * frcEff;
+  const pao2_0 = p.fao2Init * (P_BARO - P_H2O);
+  const sa0 = severinghausSao2(pao2_0);
+  const ca0 = o2Content(p.hb, sa0, pao2_0);
+  const cv0 = ca0 - p.vo2 / p.co;
+  let state = {A_L: A0, Cv: cv0};
+  let t = 0;
+  let out = [];
+  let prev = sao2FromState(0, state, p).spo2;
+  let t90 = null;
+  out.push({t:0, spo2:prev, pao2:pao2_0});
+  const h = dtSec / 60.0;
+  const nSteps = Math.ceil(tMaxSec / dtSec);
+  for (let k = 1; k <= nSteps; k++) {
+    const k1 = deriv(t, state, p);
+    const s2 = {A_L: state.A_L + 0.5*h*k1.dA_L, Cv: state.Cv + 0.5*h*k1.dCv};
+    const k2 = deriv(t + 0.5*dtSec, s2, p);
+    const s3 = {A_L: state.A_L + 0.5*h*k2.dA_L, Cv: state.Cv + 0.5*h*k2.dCv};
+    const k3 = deriv(t + 0.5*dtSec, s3, p);
+    const s4 = {A_L: state.A_L + h*k3.dA_L, Cv: state.Cv + h*k3.dCv};
+    const k4 = deriv(t + dtSec, s4, p);
+    state = {
+      A_L: Math.max(state.A_L + (h/6.0)*(k1.dA_L + 2*k2.dA_L + 2*k3.dA_L + k4.dA_L), 1e-6),
+      Cv:  Math.max(state.Cv  + (h/6.0)*(k1.dCv  + 2*k2.dCv  + 2*k3.dCv  + k4.dCv), 1e-6)
+    };
+    t = k * dtSec;
+    const nowObj = sao2FromState(t, state, p);
+    const now = nowObj.spo2;
+    if (t90 === null && prev > 90.0 && now <= 90.0) {
+      const frac = (prev - 90.0) / (prev - now);
+      t90 = (k - 1 + frac) * dtSec;
+    }
+    prev = now;
+    out.push({t:t, spo2:now, pao2:nowObj.pao2});
+  }
+  return {series: out, t90: t90, params: p};
+}
+
+function buildParamsFromUI(overrides={}) {
+  const age = overrides.age ?? num('age');
+  const weight = overrides.weight ?? num('weight');
+  const preset = PRESETS[$('preset').value] || {};
+  const hb = overrides.hb ?? num('hb');
+  const usePresetOverrides = !Object.prototype.hasOwnProperty.call(overrides, 'age') &&
+                             !Object.prototype.hasOwnProperty.call(overrides, 'weight');
+  let frc = overrides.frc ?? ((usePresetOverrides && preset.frcOverride) ? preset.frcOverride : frcReference(age, weight));
+  let vo2 = overrides.vo2 ?? ((usePresetOverrides && preset.vo2Override) ? preset.vo2Override : vo2Reference(age, weight));
+  let co = overrides.co ?? ((usePresetOverrides && preset.coOverride) ? preset.coOverride : coReference(age, weight));
+  frc *= (overrides.frcFactor ?? num('frcFactor'));
+  vo2 *= (overrides.vo2Factor ?? num('vo2Factor'));
+  co *= (overrides.coFactor ?? num('coFactor'));
+  const useCC = overrides.useCC ?? $('cc').checked;
+  return {
+    name: overrides.name || preset.name || 'scenario',
+    age: age,
+    weight: weight,
+    frc: frc,
+    vo2: vo2,
+    hb: hb,
+    co: co,
+    shunt: (overrides.shuntPct ?? num('shunt')) / 100.0,
+    fao2Init: overrides.fao2Init ?? num('fao2'),
+    airway: overrides.airway ?? $('airway').checked,
+    fAwO2: overrides.fAwO2 ?? num('faw'),
+    rApnea: R_APNEA_DEFAULT,
+    volBlood: 0.75 * weight,
+    dshuntMax: (overrides.dshuntPct ?? num('dshunt')) / 100.0,
+    tauAtel: overrides.tauAtel ?? num('tau'),
+    fTrapped: useCC ? fTrappedCc(age) : 0.0,
+    useCC: useCC
+  };
+}
+
+function applyPreset() {
+  const p = PRESETS[$('preset').value];
+  if (!p) return;
+  set('age', p.age);
+  set('weight', p.weight);
+  set('hb', p.hb === null ? hbReference(p.age).toFixed(1) : p.hb);
+  set('duration', p.duration || 12);
+  $('airway').checked = !!p.airway;
+  set('faw', p.faw ?? 0);
+  set('fao2', 0.90);
+  set('shunt', p.shunt ?? 5);
+  set('dshunt', 0);
+  set('tau', 90);
+  set('frcFactor', 1);
+  set('vo2Factor', 1);
+  set('coFactor', 1);
+  $('cc').checked = true;
+}
+
+function makeCurves() {
+  const mode = $('mode').value;
+  const tMax = Math.max(60, num('duration') * 60.0);
+  let curves = [];
+  let title = '';
+  if (mode === 'single') {
+    const p = buildParamsFromUI();
+    curves.push({label: p.name + (p.useCC ? ' + closing cap.' : ''), color: '#d62728', dash: false, result: simulate(p, tMax)});
+    if ($('compare').checked && p.useCC) {
+      const base = buildParamsFromUI({useCC:false, name:p.name + ' baseline'});
+      curves.unshift({label:'baseline without closing cap.', color:'#1f77b4', dash:true, result: simulate(base, tMax)});
+    }
+    title = 'Single scenario';
+  } else if (mode === 'agebands') {
+    const keys = ['infant','toddler','preschool','school','adolescent'];
+    keys.forEach((key, i) => {
+      const pr = PRESETS[key];
+      const p = buildParamsFromUI({
+        name: pr.name, age: pr.age, weight: pr.weight, hb: hbReference(pr.age),
+        airway:false, fAwO2:0, frc:null, vo2:null, co:null,
+        shuntPct:num('shunt'), fao2Init:num('fao2'), dshuntPct:num('dshunt'), tauAtel:num('tau'),
+        useCC:$('cc').checked
+      });
+      curves.push({label: pr.name, color: COLORS[i], dash:false, result: simulate(p, tMax)});
+    });
+    title = 'Paediatric age bands';
+  } else if (mode === 'thrive') {
+    const closed = buildParamsFromUI({name:'adult closed airway', age:35, weight:70, hb:15, airway:false, fAwO2:0, frc:2300, vo2:250, co:50, shuntPct:5, useCC:false});
+    const thrive = buildParamsFromUI({name:'adult THRIVE-like', age:45, weight:80, hb:14, airway:true, fAwO2:1, frc:2400, vo2:250, co:55, shuntPct:8, useCC:false});
+    curves.push({label:'closed airway (adult)', color:'#d62728', dash:false, result: simulate(closed, tMax)});
+    curves.push({label:'apnoeic oxygenation (THRIVE-like)', color:'#2ca02c', dash:false, result: simulate(thrive, tMax)});
+    title = 'Limiting case: apnoeic oxygenation vs closed airway';
+  }
+  $('plotTitle').textContent = title;
+  return curves;
+}
+
+function drawChart(curves) {
+  const canvas = $('chart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  const W = rect.width, H = rect.height;
+  ctx.clearRect(0, 0, W, H);
+  const margin = {left: 64, right: 24, top: 26, bottom: 58};
+  const x0 = margin.left, y0 = H - margin.bottom;
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  const tMaxMin = Math.max(...curves.map(c => c.result.series[c.result.series.length-1].t)) / 60.0;
+  const yMin = 60, yMax = 100;
+  const xMap = (tSec) => x0 + (tSec/60.0) / tMaxMin * plotW;
+  const yMap = (spo2) => y0 - (spo2 - yMin) / (yMax - yMin) * plotH;
+
+  ctx.fillStyle = '#fff';
+  ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle = '#d0d5dd';
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x0, margin.top, plotW, plotH);
+
+  ctx.font = '12px system-ui, sans-serif';
+  ctx.fillStyle = '#475467';
+  ctx.textAlign = 'right';
+  ctx.textBaseline = 'middle';
+  for (let y=60; y<=100; y+=5) {
+    const yy = yMap(y);
+    ctx.strokeStyle = y === 90 ? '#7a7a7a' : '#eaecf0';
+    ctx.setLineDash(y === 90 ? [5,4] : []);
+    ctx.beginPath(); ctx.moveTo(x0, yy); ctx.lineTo(x0+plotW, yy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillText(String(y), x0-8, yy);
+  }
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  const xTickStep = tMaxMin <= 8 ? 1 : (tMaxMin <= 20 ? 2.5 : 5);
+  for (let x=0; x<=tMaxMin+1e-9; x+=xTickStep) {
+    const xx = x0 + x / tMaxMin * plotW;
+    ctx.strokeStyle = '#eaecf0';
+    ctx.beginPath(); ctx.moveTo(xx, margin.top); ctx.lineTo(xx, y0); ctx.stroke();
+    ctx.fillStyle = '#475467';
+    ctx.fillText(Number.isInteger(x) ? String(x) : x.toFixed(1), xx, y0+8);
+  }
+  ctx.fillStyle = '#101828';
+  ctx.font = '14px system-ui, sans-serif';
+  ctx.fillText('Apnoea time (min)', x0 + plotW/2, H-30);
+  ctx.save();
+  ctx.translate(20, margin.top + plotH/2);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('SpO₂ (%)', 0, 0);
+  ctx.restore();
+
+  curves.forEach(c => {
+    const pts = c.result.series;
+    ctx.strokeStyle = c.color;
+    ctx.lineWidth = c.dash ? 2 : 3;
+    ctx.setLineDash(c.dash ? [7,5] : []);
+    ctx.beginPath();
+    pts.forEach((p, i) => {
+      const xx = xMap(p.t), yy = yMap(p.spo2);
+      if (i === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+    });
+    ctx.stroke();
+    ctx.setLineDash([]);
+  });
+
+  if ($('mode').value === 'agebands' && $('patelObs').checked) {
+    curves.forEach(c => {
+      const obs = PATEL_OBS[c.label];
+      if (!obs) return;
+      const xx = xMap(obs.t90);
+      const yy = yMap(90);
+      const xerr = obs.sd / 60.0 / tMaxMin * plotW;
+      ctx.strokeStyle = c.color;
+      ctx.fillStyle = c.color;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(xx-xerr, yy); ctx.lineTo(xx+xerr, yy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xx-xerr, yy-4); ctx.lineTo(xx-xerr, yy+4); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(xx+xerr, yy-4); ctx.lineTo(xx+xerr, yy+4); ctx.stroke();
+      ctx.beginPath(); ctx.arc(xx, yy, 5, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#000'; ctx.lineWidth = 1; ctx.stroke();
+    });
+  }
+
+  // Legend
+  let lx = x0 + 12, ly = margin.top + 14;
+  ctx.font = '13px system-ui, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  curves.forEach((c, i) => {
+    const y = ly + i*21;
+    ctx.strokeStyle = c.color;
+    ctx.lineWidth = c.dash ? 2 : 3;
+    ctx.setLineDash(c.dash ? [7,5] : []);
+    ctx.beginPath(); ctx.moveTo(lx, y); ctx.lineTo(lx+26, y); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = '#101828';
+    ctx.fillText(c.label, lx+34, y);
+  });
+}
+
+function formatT90(t) {
+  if (t === null || !isFinite(t)) return '<span class="ok">not reached</span>';
+  return `${t.toFixed(1)} s (${(t/60).toFixed(2)} min)`;
+}
+function updateTable(curves) {
+  const body = $('outTable').querySelector('tbody');
+  body.innerHTML = '';
+  if ($('mode').value === 'single') {
+    const c = curves[curves.length-1];
+    const p = c.result.params;
+    const init = c.result.series[0];
+    const rows = [
+      ['Scenario', c.label],
+      ['T90 predicted', formatT90(c.result.t90)],
+      ['Age', `${p.age.toFixed(2)} yr`],
+      ['Weight', `${p.weight.toFixed(1)} kg`],
+      ['Hb', `${p.hb.toFixed(1)} g/dL`],
+      ['FRC', `${p.frc.toFixed(0)} mL`],
+      ['Effective FRC', `${(p.frc*(1-p.fTrapped)).toFixed(0)} mL`],
+      ['Trapped FRC fraction', `${(100*p.fTrapped).toFixed(1)}%`],
+      ['VO₂', `${p.vo2.toFixed(1)} mL/min`],
+      ['Cardiac output', `${p.co.toFixed(1)} dL/min`],
+      ['Baseline shunt', `${(100*p.shunt).toFixed(1)}%`],
+      ['Dynamic shunt max increase', `${(100*p.dshuntMax).toFixed(1)}%`],
+      ['Initial PAO₂', `${init.pao2.toFixed(0)} mmHg`],
+      ['Airway', p.airway ? 'patent' : 'closed'],
+      ['Airway O₂ fraction', p.fAwO2.toFixed(2)]
+    ];
+    rows.forEach(r => addRow(body, r[0], r[1]));
+  } else {
+    addHeader(body, ['Curve', 'T90', 'FRC eff.', 'VO₂', 'trapped FRC']);
+    curves.forEach(c => {
+      const p = c.result.params;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${c.label}</td><td class="value">${formatT90(c.result.t90)}</td><td class="value">${(p.frc*(1-p.fTrapped)).toFixed(0)} mL</td><td class="value">${p.vo2.toFixed(1)}</td><td class="value">${(100*p.fTrapped).toFixed(1)}%</td>`;
+      body.appendChild(tr);
+    });
+  }
+}
+function addRow(body, k, v) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<th>${k}</th><td class="value">${v}</td>`;
+  body.appendChild(tr);
+}
+function addHeader(body, labels) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = labels.map(x => `<th>${x}</th>`).join('');
+  body.appendChild(tr);
+}
+
+function run() {
+  const curves = makeCurves();
+  drawChart(curves);
+  updateTable(curves);
+}
+
+$('preset').addEventListener('change', () => { applyPreset(); run(); });
+$('mode').addEventListener('change', () => run());
+$('run').addEventListener('click', run);
+$('reset').addEventListener('click', () => { applyPreset(); run(); });
+$('png').addEventListener('click', () => {
+  const a = document.createElement('a');
+  a.href = $('chart').toDataURL('image/png');
+  a.download = 'apnoea_desaturation_curve.png';
+  a.click();
+});
+Array.from(document.querySelectorAll('input, select')).forEach(el => {
+  if (!['preset','mode'].includes(el.id)) el.addEventListener('change', run);
+});
+window.addEventListener('resize', run);
+applyPreset();
+run();
+</script>
+</body>
+</html>

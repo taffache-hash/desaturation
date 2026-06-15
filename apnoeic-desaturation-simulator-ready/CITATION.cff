@@ -1,0 +1,34 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the metadata from this file."
+title: "In-silico apnoeic oxygen desaturation simulator"
+type: software
+version: "1.0.0"
+date-released: "2026-06-15"
+abstract: >
+  Standalone browser-based simulator, editable notebook, and Python validation
+  scripts for a deterministic physiological model of apnoeic oxygen desaturation
+  in children. The tool is intended for educational and research use only and
+  is not a clinical decision-support system.
+authors:
+  - family-names: "Taffache"
+    given-names: "Paolo"
+repository-code: "https://github.com/USERNAME/apnoeic-desaturation-simulator"
+url: "https://USERNAME.github.io/apnoeic-desaturation-simulator/"
+license: MIT
+keywords:
+  - apnoea
+  - oxygen desaturation
+  - paediatric anaesthesia
+  - physiological modelling
+  - functional residual capacity
+  - closing capacity
+  - digital twin
+preferred-citation:
+  type: article
+  title: "How reliable is a deterministic physiological model in predicting apnoeic oxygen desaturation in children? External validation and a probabilistic reframing across two independent clinical cohorts"
+  authors:
+    - family-names: "Taffache"
+      given-names: "Paolo"
+  journal: "To be completed"
+  year: 2026
+  notes: "Manuscript in preparation / under submission. Update this section after acceptance."
