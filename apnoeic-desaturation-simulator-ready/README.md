@@ -122,7 +122,7 @@ If you use this software, please cite the archived release DOI and the accompany
 
 The standalone HTML simulator is available at:
 
-https://IL-TUO-LINK-COMPLETO
+https://taffache-hash.github.io/desaturation/apnoeic-desaturation-simulator-ready/simulator/apnea_desaturation_simulator.html
 
 ## Disclaimer
 
