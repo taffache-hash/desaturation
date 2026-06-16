@@ -12,9 +12,8 @@ abstract: >
 authors:
   - family-names: "Taffache"
     given-names: "Paolo"
-repository-code: "https://github.com/USERNAME/apnoeic-desaturation-simulator"
-url: https://taffache-hash.github.io/desaturation/apnoeic-desaturation-simulator-ready/simulator/apnea_desaturation_simulator.html
-license: MIT
+repository-code: "https://github.com/taffache-hash/desaturation"
+url: "https://taffache-hash.github.io/desaturation/apnoeic-desaturation-simulator-ready/simulator/apnea_desaturation_simulator.html"
 keywords:
   - apnoea
   - oxygen desaturation
