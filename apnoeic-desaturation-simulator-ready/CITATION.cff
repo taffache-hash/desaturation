@@ -3,17 +3,19 @@ message: "If you use this software, please cite it using the metadata from this 
 title: "In-silico apnoeic oxygen desaturation simulator"
 type: software
 version: "1.0.0"
-date-released: "2026-06-15"
-abstract: >
-  Standalone browser-based simulator, editable notebook, and Python validation
-  scripts for a deterministic physiological model of apnoeic oxygen desaturation
-  in children. The tool is intended for educational and research use only and
-  is not a clinical decision-support system.
+date-released: "2026-06-16"
+license: MIT
+
 authors:
   - family-names: "Taffache"
     given-names: "Paolo"
+
 repository-code: "https://github.com/taffache-hash/desaturation"
 url: "https://taffache-hash.github.io/desaturation/apnoeic-desaturation-simulator-ready/simulator/apnea_desaturation_simulator.html"
+doi: "10.5281/zenodo.20719937"
+
+abstract: "Standalone browser-based simulator, editable notebook, and Python validation scripts for a deterministic physiological model of apnoeic oxygen desaturation in children. The tool is intended for educational and research use only and is not a clinical decision-support system."
+
 keywords:
   - apnoea
   - oxygen desaturation
@@ -21,13 +23,3 @@ keywords:
   - physiological modelling
   - functional residual capacity
   - closing capacity
-  - digital twin
-preferred-citation:
-  type: article
-  title: "How reliable is a deterministic physiological model in predicting apnoeic oxygen desaturation in children? External validation and a probabilistic reframing across two independent clinical cohorts"
-  authors:
-    - family-names: "Taffache"
-      given-names: "Paolo"
-  journal: 
-  year: 2026
-  notes: "under submission"
