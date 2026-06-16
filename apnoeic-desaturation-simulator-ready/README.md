@@ -118,6 +118,15 @@ Implemented modules include:
 ## Citation
 
 If you use this software, please cite the archived release DOI and the accompanying manuscript.
+## Live HTML simulator
+
+The standalone HTML simulator is available at:
+
+https://IL-TUO-LINK-COMPLETO
+
+## Disclaimer
+
+This simulator is provided for educational and research purposes only. It is not a clinical decision-support system. It does not predict individual patient risk and must not be used to determine safe apnoea time or to guide airway or oxygenation management.
 
 A citation template is provided in `CITATION.cff`.
 
