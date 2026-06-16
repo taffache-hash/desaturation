@@ -13,7 +13,7 @@ authors:
   - family-names: "Taffache"
     given-names: "Paolo"
 repository-code: "https://github.com/USERNAME/apnoeic-desaturation-simulator"
-url: "https://USERNAME.github.io/apnoeic-desaturation-simulator/"
+url: https://taffache-hash.github.io/desaturation/apnoeic-desaturation-simulator-ready/simulator/apnea_desaturation_simulator.html
 license: MIT
 keywords:
   - apnoea
@@ -29,6 +29,6 @@ preferred-citation:
   authors:
     - family-names: "Taffache"
       given-names: "Paolo"
-  journal: "To be completed"
+  journal: 
   year: 2026
-  notes: "Manuscript in preparation / under submission. Update this section after acceptance."
+  notes: "under submission"
