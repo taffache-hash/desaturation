@@ -1,4 +1,5 @@
 # In-silico apnoeic oxygen desaturation simulator
+[![DOI](https://zenodo.org/badge/1270275555.svg)](https://doi.org/10.5281/zenodo.20719936)
 
 This repository contains a deterministic physiological simulator of apnoeic oxygen desaturation, developed for educational and research use in paediatric anaesthesia modelling.
 
